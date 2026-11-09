@@ -20,7 +20,10 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.idlealchemist.data.TrailProgressViewModel
 import com.example.idlealchemist.designsystem.AlchemicalTheme
+import com.example.idlealchemist.feature.stage.StageRoute
 import com.example.idlealchemist.feature.codex.AcademyCodexScreen
 import com.example.idlealchemist.feature.grimoire.GrimoireRoute
 import com.example.idlealchemist.feature.trail.CrucibleTrailRoute
@@ -52,6 +55,8 @@ fun App() {
                 AppRoute.Onboarding,
             )
 
+            val trailProgress = viewModel { TrailProgressViewModel() }
+
             val currentRoute = backStack.lastOrNull() as? AppRoute
 
             val previousTrailProfile = backStack
@@ -70,6 +75,7 @@ fun App() {
             val title = when (currentRoute) {
                 AppRoute.Onboarding -> "Alchemical Workshop"
                 is AppRoute.CrucibleTrail -> "Crucible Trail"
+                is AppRoute.Stage -> "Stage ${currentRoute.stageNumber}"
                 AppRoute.Grimoire -> "Grimoire"
                 AppRoute.AcademyCodex -> "Academy Codex"
                 null -> "Alchemical Workshop"
@@ -159,10 +165,40 @@ fun App() {
                         entry<AppRoute.CrucibleTrail> { route ->
                             CrucibleTrailRoute(
                                 profile = route.profile,
+                                trailProgress = trailProgress,
+                                onPlayStage = { stageNumber ->
+                                    navigateTo(
+                                        backStack = backStack,
+                                        destination =
+                                            AppRoute.Stage(route.profile, stageNumber),
+                                    )
+                                },
                                 onCreateAnother = {
                                     navigateTo(
                                         backStack = backStack,
                                         destination = AppRoute.Onboarding,
+                                    )
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.Stage> { route ->
+                            StageRoute(
+                                profile = route.profile,
+                                stageNumber = route.stageNumber,
+                                trailProgress = trailProgress,
+                                onOpenStage = { stageNumber ->
+                                    replaceDestination(
+                                        backStack = backStack,
+                                        destination =
+                                            AppRoute.Stage(route.profile, stageNumber),
+                                    )
+                                },
+                                onBackToTrail = {
+                                    navigateTo(
+                                        backStack = backStack,
+                                        destination =
+                                            AppRoute.CrucibleTrail(route.profile),
                                     )
                                 },
                             )
@@ -177,6 +213,7 @@ fun App() {
                                     )
                                 },
                                 onProfileRemoved = { profileId ->
+                                    trailProgress.removeProfile(profileId)
                                     removeProfileRoutes(
                                         backStack = backStack,
                                         profileId = profileId,
@@ -226,6 +263,24 @@ private fun navigateTo(
 }
 
 /**
+ * Swaps the current destination for another, so moving from one stage
+ * to the next does not stack every stage in the history.
+ *
+ * @param backStack Application-owned navigation history.
+ * @param destination Destination shown in place of the current one.
+ */
+private fun replaceDestination(
+    backStack: NavBackStack<NavKey>,
+    destination: AppRoute,
+) {
+    if (backStack.size > 1) {
+        backStack[backStack.lastIndex] = destination
+    } else {
+        backStack.add(destination)
+    }
+}
+
+/**
  * Removes the current destination while preserving the root entry.
  *
  * @param backStack Application-owned navigation history.
@@ -239,7 +294,7 @@ private fun popDestination(
 }
 
 /**
- * Removes trail snapshots belonging to a deleted profile.
+ * Removes trail and stage snapshots belonging to a deleted profile.
  *
  * @param backStack Application-owned navigation history.
  * @param profileId Identifier removed from the shared repository.
@@ -251,10 +306,13 @@ private fun removeProfileRoutes(
     for (index in backStack.lastIndex downTo 1) {
         val route = backStack[index]
 
-        if (
-            route is AppRoute.CrucibleTrail &&
-            route.profile.id == profileId
-        ) {
+        val routeProfileId = when (route) {
+            is AppRoute.CrucibleTrail -> route.profile.id
+            is AppRoute.Stage -> route.profile.id
+            else -> null
+        }
+
+        if (routeProfileId == profileId) {
             backStack.removeAt(index)
         }
     }

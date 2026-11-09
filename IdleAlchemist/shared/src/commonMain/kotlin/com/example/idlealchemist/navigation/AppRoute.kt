@@ -8,7 +8,7 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
 /**
- * Defines the application's four destinations.
+ * Defines the application's destinations: four tabs plus the stage being played.
  */
 @Serializable
 sealed class AppRoute : NavKey {
@@ -25,6 +25,18 @@ sealed class AppRoute : NavKey {
     @Serializable
     data class CrucibleTrail(
         val profile: AlchemistProfile,
+    ) : AppRoute()
+
+    /**
+     * Plays one trail stage as its own clicker game.
+     *
+     * @property profile Snapshot of the alchemist playing the stage.
+     * @property stageNumber Number of the stage being played.
+     */
+    @Serializable
+    data class Stage(
+        val profile: AlchemistProfile,
+        val stageNumber: Int,
     ) : AppRoute()
 
     /** Opens the cumulative collection from the shared repository. */
@@ -50,6 +62,11 @@ val AppBackStackConfiguration = SavedStateConfiguration {
             subclass(
                 AppRoute.CrucibleTrail::class,
                 AppRoute.CrucibleTrail.serializer(),
+            )
+
+            subclass(
+                AppRoute.Stage::class,
+                AppRoute.Stage.serializer(),
             )
 
             subclass(

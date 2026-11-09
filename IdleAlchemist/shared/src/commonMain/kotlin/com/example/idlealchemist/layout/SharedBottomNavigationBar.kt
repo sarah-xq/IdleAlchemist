@@ -51,7 +51,8 @@ fun SharedBottomNavigationBar(
         )
 
         NavigationBarItem(
-            selected = currentRoute is AppRoute.CrucibleTrail,
+            selected = currentRoute is AppRoute.CrucibleTrail ||
+                    currentRoute is AppRoute.Stage,
             enabled = canOpenTrail,
             onClick = onTrail,
             icon = {
