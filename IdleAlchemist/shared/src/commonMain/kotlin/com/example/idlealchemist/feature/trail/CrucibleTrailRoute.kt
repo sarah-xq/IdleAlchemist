@@ -37,7 +37,7 @@ fun CrucibleTrailRoute(
     }
 
     val allProgress by trailProgress.progress.collectAsState()
-    val levels = allProgress[profile.id].orEmpty()
+    val levels = allProgress[profile.id]?.levels.orEmpty()
 
     val selectedStage = CrucibleTrailStages.firstOrNull { stage ->
         stage.number == selectedStageNumber

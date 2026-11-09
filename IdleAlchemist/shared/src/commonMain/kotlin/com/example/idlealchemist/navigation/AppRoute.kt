@@ -8,7 +8,8 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
 /**
- * Defines the application's destinations: four tabs plus the stage being played.
+ * Defines the application's destinations: the navigation bar tabs, the
+ * stage being played, and the sent-message screens under Contact.
  */
 @Serializable
 sealed class AppRoute : NavKey {
@@ -39,14 +40,62 @@ sealed class AppRoute : NavKey {
         val stageNumber: Int,
     ) : AppRoute()
 
+    /**
+     * Shows the achievements an alchemist has earned across every stage.
+     *
+     * @property profile Snapshot of the alchemist whose achievements are shown.
+     */
+    @Serializable
+    data class Achievements(
+        val profile: AlchemistProfile,
+    ) : AppRoute()
+
+    /**
+     * Sells potions that boost the alchemist's last played stage.
+     *
+     * @property profile Snapshot of the alchemist buying potions.
+     */
+    @Serializable
+    data class Shop(
+        val profile: AlchemistProfile,
+    ) : AppRoute()
+
     /** Opens the cumulative collection from the shared repository. */
     @Serializable
     data object Grimoire : AppRoute()
+
+    /** Opens the contact form. */
+    @Serializable
+    data object Contact : AppRoute()
+
+    /** Lists every message sent from the contact form. */
+    @Serializable
+    data object Messages : AppRoute()
+
+    /**
+     * Shows one sent message.
+     *
+     * @property id Identifier of the message, passed as the navigation parameter.
+     */
+    @Serializable
+    data class MessageDetail(
+        val id: Int,
+    ) : AppRoute()
 
     /** Opens game guidance, formulas, and application information. */
     @Serializable
     data object AcademyCodex : AppRoute()
 }
+
+/** Alchemist a destination belongs to, or null for destinations shared by everyone. */
+val AppRoute.profileOrNull: AlchemistProfile?
+    get() = when (this) {
+        is AppRoute.CrucibleTrail -> profile
+        is AppRoute.Stage -> profile
+        is AppRoute.Achievements -> profile
+        is AppRoute.Shop -> profile
+        else -> null
+    }
 
 /**
  * Registers all destination serializers for multiplatform saved state.
@@ -70,8 +119,33 @@ val AppBackStackConfiguration = SavedStateConfiguration {
             )
 
             subclass(
+                AppRoute.Achievements::class,
+                AppRoute.Achievements.serializer(),
+            )
+
+            subclass(
+                AppRoute.Shop::class,
+                AppRoute.Shop.serializer(),
+            )
+
+            subclass(
                 AppRoute.Grimoire::class,
                 AppRoute.Grimoire.serializer(),
+            )
+
+            subclass(
+                AppRoute.Contact::class,
+                AppRoute.Contact.serializer(),
+            )
+
+            subclass(
+                AppRoute.Messages::class,
+                AppRoute.Messages.serializer(),
+            )
+
+            subclass(
+                AppRoute.MessageDetail::class,
+                AppRoute.MessageDetail.serializer(),
             )
 
             subclass(

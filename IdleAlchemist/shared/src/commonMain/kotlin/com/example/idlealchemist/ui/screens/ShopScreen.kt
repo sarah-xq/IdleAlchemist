@@ -34,11 +34,13 @@ import org.jetbrains.compose.resources.painterResource
  * (through [onBuy]) when the fake payment succeeds.
  *
  * Stateful only for which potion's checkout is open; the game data comes in as [state].
+ * [subtitle] says which game the potions boost.
  */
 @Composable
 fun ShopScreen(
     state: GameState,
     onBuy: (potionId: String) -> Unit,
+    subtitle: String = "Boost your brew",
     modifier: Modifier = Modifier
 ) {
     var pendingId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -52,7 +54,7 @@ fun ShopScreen(
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            ScreenHeader("POTION SHOP", "Boost your brew")
+            ScreenHeader("POTION SHOP", subtitle)
 
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(Potions.all) { potion ->

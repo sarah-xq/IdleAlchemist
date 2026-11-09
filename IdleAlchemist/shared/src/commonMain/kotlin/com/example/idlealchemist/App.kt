@@ -30,13 +30,23 @@ import com.example.idlealchemist.feature.trail.CrucibleTrailRoute
 import com.example.idlealchemist.layout.SharedBottomNavigationBar
 import com.example.idlealchemist.navigation.AppBackStackConfiguration
 import com.example.idlealchemist.navigation.AppRoute
+import com.example.idlealchemist.navigation.profileOrNull
 import com.example.idlealchemist.feature.onboarding.OnboardingRoute
+import com.example.idlealchemist.feature.trail.CrucibleTrailStages
+import com.example.idlealchemist.model.GameState
+import com.example.idlealchemist.model.ProfileProgress
+import com.example.idlealchemist.model.achievementsGame
+import com.example.idlealchemist.ui.screens.AchievementsScreen
+import com.example.idlealchemist.ui.screens.ContactScreen
+import com.example.idlealchemist.ui.screens.MessageDetailScreen
+import com.example.idlealchemist.ui.screens.MessagesScreen
+import com.example.idlealchemist.ui.screens.ShopScreen
 import com.example.idlealchemist.ui.LocalProfileRepository
 import com.example.idlealchemist.ui.ProfileRepositoryProvider
 import kotlin.collections.get
 
 /**
- * Assembles the four screens with shared navigation, theme, and session data.
+ * Assembles every screen with shared navigation, theme, and session data.
  *
  * Registration remains the root destination. The shared repository stays
  * alive while navigation entries change.
@@ -59,10 +69,13 @@ fun App() {
 
             val currentRoute = backStack.lastOrNull() as? AppRoute
 
+            val allProgress by trailProgress.progress.collectAsState()
+            val messages by trailProgress.messages.collectAsState()
+
             val previousTrailProfile = backStack
-                .filterIsInstance<AppRoute.CrucibleTrail>()
-                .lastOrNull()
-                ?.profile
+                .filterIsInstance<AppRoute>()
+                .lastOrNull { route -> route.profileOrNull != null }
+                ?.profileOrNull
                 ?.takeIf { candidate ->
                     profiles.any { profile ->
                         profile.id == candidate.id
@@ -76,7 +89,12 @@ fun App() {
                 AppRoute.Onboarding -> "Alchemical Workshop"
                 is AppRoute.CrucibleTrail -> "Crucible Trail"
                 is AppRoute.Stage -> "Stage ${currentRoute.stageNumber}"
+                is AppRoute.Achievements -> "Achievements"
+                is AppRoute.Shop -> "Potion Shop"
                 AppRoute.Grimoire -> "Grimoire"
+                AppRoute.Contact -> "Contact"
+                AppRoute.Messages -> "Sent Messages"
+                is AppRoute.MessageDetail -> "Message"
                 AppRoute.AcademyCodex -> "Academy Codex"
                 null -> "Alchemical Workshop"
             }
@@ -125,10 +143,32 @@ fun App() {
                                 )
                             }
                         },
+                        onAchievements = {
+                            trailProfile?.let { profile ->
+                                navigateTo(
+                                    backStack = backStack,
+                                    destination = AppRoute.Achievements(profile),
+                                )
+                            }
+                        },
+                        onShop = {
+                            trailProfile?.let { profile ->
+                                navigateTo(
+                                    backStack = backStack,
+                                    destination = AppRoute.Shop(profile),
+                                )
+                            }
+                        },
                         onGrimoire = {
                             navigateTo(
                                 backStack = backStack,
                                 destination = AppRoute.Grimoire,
+                            )
+                        },
+                        onContact = {
+                            navigateTo(
+                                backStack = backStack,
+                                destination = AppRoute.Contact,
                             )
                         },
                         onCodex = {
@@ -200,6 +240,78 @@ fun App() {
                                         destination =
                                             AppRoute.CrucibleTrail(route.profile),
                                     )
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.Achievements> { route ->
+                            val profileProgress =
+                                allProgress[route.profile.id] ?: ProfileProgress()
+
+                            AchievementsScreen(
+                                state = profileProgress.achievementsGame(),
+                                onDelete = { achievementId ->
+                                    trailProgress.deleteAchievement(
+                                        route.profile.id,
+                                        achievementId,
+                                    )
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.Shop> { route ->
+                            val stageNumber = trailProgress.shopStage(route.profile.id)
+                            val stage = CrucibleTrailStages.first { stage ->
+                                stage.number == stageNumber
+                            }
+                            val stageGame = allProgress[route.profile.id]
+                                ?.levels
+                                ?.get(stageNumber)
+                                ?.game
+                                ?: GameState()
+
+                            ShopScreen(
+                                state = stageGame,
+                                subtitle = "Boosts stage ${stage.number}: ${stage.title}",
+                                onBuy = { potionId ->
+                                    trailProgress.buyPotion(route.profile.id, potionId)
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.Contact> {
+                            ContactScreen(
+                                sentCount = messages.size,
+                                onSend = trailProgress::sendMessage,
+                                onPreview = { id ->
+                                    backStack.add(AppRoute.MessageDetail(id))
+                                },
+                                onOpenList = {
+                                    backStack.add(AppRoute.Messages)
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.Messages> {
+                            MessagesScreen(
+                                messages = messages,
+                                onOpen = { id ->
+                                    backStack.add(AppRoute.MessageDetail(id))
+                                },
+                                onRemove = trailProgress::removeMessage,
+                                onBack = {
+                                    popDestination(backStack)
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.MessageDetail> { route ->
+                            MessageDetailScreen(
+                                message = messages.firstOrNull { message ->
+                                    message.id == route.id
+                                },
+                                onBack = {
+                                    popDestination(backStack)
                                 },
                             )
                         }
@@ -294,7 +406,7 @@ private fun popDestination(
 }
 
 /**
- * Removes trail and stage snapshots belonging to a deleted profile.
+ * Removes every destination snapshot belonging to a deleted profile.
  *
  * @param backStack Application-owned navigation history.
  * @param profileId Identifier removed from the shared repository.
@@ -304,15 +416,9 @@ private fun removeProfileRoutes(
     profileId: String,
 ) {
     for (index in backStack.lastIndex downTo 1) {
-        val route = backStack[index]
+        val route = backStack[index] as? AppRoute
 
-        val routeProfileId = when (route) {
-            is AppRoute.CrucibleTrail -> route.profile.id
-            is AppRoute.Stage -> route.profile.id
-            else -> null
-        }
-
-        if (routeProfileId == profileId) {
+        if (route?.profileOrNull?.id == profileId) {
             backStack.removeAt(index)
         }
     }
