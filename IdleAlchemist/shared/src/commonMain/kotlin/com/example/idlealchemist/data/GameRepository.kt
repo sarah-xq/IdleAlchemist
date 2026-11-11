@@ -25,6 +25,8 @@ class GameRepository {
     fun tap() = _state.update { it.afterTap().withUnlocks() }
     fun buyExtraClick() = _state.update { it.afterBuyExtraClick().withUnlocks() }
     fun buyApprentice() = _state.update { it.afterBuyApprentice().withUnlocks() }
+
+    fun extraHnad() = _state.update { it.afterExtraHand().withUnlocks() }
     fun buyPotion(id: String) = _state.update { it.afterBuyPotion(id).withUnlocks() }
     fun tick() = _state.update { it.afterTick().withUnlocks() }
     fun deleteAchievement(id: String) = _state.update { it.afterDeleteAchievement(id) }
