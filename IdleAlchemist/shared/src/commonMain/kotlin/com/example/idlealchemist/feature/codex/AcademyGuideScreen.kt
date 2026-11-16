@@ -70,9 +70,11 @@ private val AcademySections = listOf(
             CodexEntry(
                 title = "2. Explore the Crucible Trail",
                 description = "Select a numbered stage to inspect its " +
-                        "objective and reward. Challenges include tap " +
-                        "thresholds and timed combos. All stages can " +
-                        "currently be inspected freely.",
+                        "objective and reward, then play it. Each stage is " +
+                        "its own clicker game: essence and upgrades start " +
+                        "at zero, and completing the objective unlocks the " +
+                        "next stage. Return to any unlocked stage to carry " +
+                        "on where you left it.",
             ),
             CodexEntry(
                 title = "3. Build your Grimoire",

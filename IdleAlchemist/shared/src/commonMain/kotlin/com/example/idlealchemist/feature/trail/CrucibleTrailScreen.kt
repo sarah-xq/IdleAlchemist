@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,21 +37,28 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.idlealchemist.feature.stage.goalProgressLabel
 import com.example.idlealchemist.model.AlchemistProfile
+import com.example.idlealchemist.model.LevelProgress
+import com.example.idlealchemist.model.StageStatus
 import com.example.idlealchemist.model.TrailStage
+import com.example.idlealchemist.model.goalProgress
 import com.example.idlealchemist.ui.AlchemistProfileCard
 
 /**
  * Displays the player summary and numbered challenge trail.
  *
- * Every stage can be inspected. This screen does not claim completion
- * or modify player progress when a stage is selected.
+ * Every stage can be inspected. Unlocked and completed stages can be
+ * played from the challenge dialog; locked stages explain what unlocks them.
  *
  * @param profile Player snapshot received through navigation.
  * @param stages Ordered challenge definitions with unique stage numbers.
+ * @param levels Saved progress keyed by stage number.
+ * @param statuses Lock state of every stage, keyed by stage number.
  * @param selectedStage Challenge currently being inspected, or null.
  * @param onStageSelected Called when a stage node or card is selected.
  * @param onDismissStage Called when the challenge dialog is closed.
+ * @param onPlayStage Called when an unlocked stage is played.
  * @param onCreateAnother Called to return to profile creation.
  * @param modifier Configuration applied to the screen container.
  */
@@ -58,9 +66,12 @@ import com.example.idlealchemist.ui.AlchemistProfileCard
 fun CrucibleTrailScreen(
     profile: AlchemistProfile,
     stages: List<TrailStage>,
+    levels: Map<Int, LevelProgress>,
+    statuses: Map<Int, StageStatus>,
     selectedStage: TrailStage?,
     onStageSelected: (TrailStage) -> Unit,
     onDismissStage: () -> Unit,
+    onPlayStage: (TrailStage) -> Unit,
     onCreateAnother: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -122,8 +133,9 @@ fun CrucibleTrailScreen(
                     )
 
                     Text(
-                        text = "${stages.size} stages · Select a stage " +
-                                "to inspect its objective",
+                        text = "${statuses.count { it.value == StageStatus.COMPLETED }} of " +
+                                "${stages.size} stages complete · Finish a stage " +
+                                "to unlock the next",
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.secondary,
                     )
@@ -146,6 +158,7 @@ fun CrucibleTrailScreen(
             ) { index, stage ->
                 StagePathItem(
                     stage = stage,
+                    status = statuses[stage.number] ?: StageStatus.LOCKED,
                     isLast = index == stages.lastIndex,
                     isSelected = selectedStage?.number == stage.number,
                     onClick = {
@@ -172,8 +185,16 @@ fun CrucibleTrailScreen(
     }
 
     if (selectedStage != null) {
+        val stageIndex = stages.indexOf(selectedStage)
+
         StageDetailsDialog(
             stage = selectedStage,
+            status = statuses[selectedStage.number] ?: StageStatus.LOCKED,
+            progress = levels[selectedStage.number] ?: LevelProgress(),
+            previousStage = stages.getOrNull(stageIndex - 1),
+            onPlay = {
+                onPlayStage(selectedStage)
+            },
             onDismiss = onDismissStage,
         )
     }
@@ -186,6 +207,7 @@ fun CrucibleTrailScreen(
  * Text may wrap without requiring a fixed card height.
  *
  * @param stage Challenge definition to display.
+ * @param status Whether the stage is locked, playable, or complete.
  * @param isLast Whether the connector should end at this node.
  * @param isSelected Whether this stage is currently being inspected.
  * @param onClick Called when the node or card is selected.
@@ -195,6 +217,7 @@ fun CrucibleTrailScreen(
 @Composable
 private fun StagePathItem(
     stage: TrailStage,
+    status: StageStatus,
     isLast: Boolean,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -219,13 +242,25 @@ private fun StagePathItem(
                     .size(52.dp)
                     .semantics {
                         contentDescription =
-                            "Inspect stage ${stage.number}: ${stage.title}"
+                            "Inspect stage ${stage.number}: ${stage.title}, " +
+                                    statusLabel(status)
                     },
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
+                colors = when (status) {
+                    StageStatus.COMPLETED -> ButtonDefaults.filledTonalButtonColors(
+                        containerColor = colors.primary,
+                        contentColor = colors.onPrimary,
+                    )
+                    StageStatus.UNLOCKED -> ButtonDefaults.filledTonalButtonColors()
+                    StageStatus.LOCKED -> ButtonDefaults.filledTonalButtonColors(
+                        containerColor = colors.surfaceVariant,
+                        contentColor = colors.onSurfaceVariant,
+                    )
+                },
             ) {
                 Text(
-                    text = stage.number.toString(),
+                    text = if (status == StageStatus.COMPLETED) "✓" else stage.number.toString(),
                     style = MaterialTheme.typography.titleLarge,
                 )
             }
@@ -290,9 +325,13 @@ private fun StagePathItem(
                 )
 
                 Text(
-                    text = "Inspect challenge",
+                    text = statusLabel(status),
                     style = MaterialTheme.typography.labelLarge,
-                    color = colors.primary,
+                    color = if (status == StageStatus.LOCKED) {
+                        colors.onSurfaceVariant
+                    } else {
+                        colors.primary
+                    },
                 )
             }
         }
@@ -300,16 +339,38 @@ private fun StagePathItem(
 }
 
 /**
- * Displays the full objective and associated reward for a selected stage.
+ * Short description of a stage's lock state, shown on its card.
+ *
+ * @param status Lock state of the stage.
+ */
+private fun statusLabel(status: StageStatus): String = when (status) {
+    StageStatus.COMPLETED -> "Completed · tap to replay"
+    StageStatus.UNLOCKED -> "Unlocked · tap to play"
+    StageStatus.LOCKED -> "Locked"
+}
+
+/**
+ * Displays the full objective and associated reward for a selected stage,
+ * with a button to play it when it is unlocked.
  *
  * @param stage Challenge selected from the visual trail.
+ * @param status Whether the stage is locked, playable, or complete.
+ * @param progress Saved progress for the stage.
+ * @param previousStage Stage that must be completed to unlock this one.
+ * @param onPlay Called when Play or Resume is selected.
  * @param onDismiss Called when the dialog is dismissed or Close is selected.
  */
 @Composable
 private fun StageDetailsDialog(
     stage: TrailStage,
+    status: StageStatus,
+    progress: LevelProgress,
+    previousStage: TrailStage?,
+    onPlay: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val started = progress.game.stats.manualClicks > 0
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -347,9 +408,40 @@ private fun StageDetailsDialog(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
+
+                Text(
+                    text = "Progress",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+
+                Text(
+                    text = when {
+                        status == StageStatus.LOCKED && previousStage != null ->
+                            "Complete stage ${previousStage.number}: " +
+                                    "${previousStage.title} to unlock this stage."
+                        started ->
+                            goalProgressLabel(stage.goal, progress.goalProgress(stage.goal)) +
+                                    " · ${progress.game.points} essence saved"
+                        else -> "Not started. Essence starts at 0 in every stage."
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                )
             }
         },
         confirmButton = {
+            if (status != StageStatus.LOCKED) {
+                TextButton(onClick = onPlay) {
+                    Text(
+                        when {
+                            status == StageStatus.COMPLETED -> "Replay"
+                            started -> "Resume"
+                            else -> "Play"
+                        },
+                    )
+                }
+            }
+        },
+        dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Close")
             }
