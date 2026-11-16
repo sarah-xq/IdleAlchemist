@@ -6,7 +6,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.example.idlealchemist.data.TrailProgressViewModel
-import com.example.idlealchemist.feature.trail.CrucibleTrailStages
 import com.example.idlealchemist.model.AlchemistProfile
 import com.example.idlealchemist.model.LevelProgress
 import com.example.idlealchemist.model.ProfileProgress
@@ -15,10 +14,10 @@ import com.example.idlealchemist.model.stageStatuses
 import kotlinx.coroutines.delay
 
 /**
- * Connects one stage's saved game to the stage screen.
+ * Connects one level's saved game to the stage screen.
  *
- * The stage's game ticks once per second only while this screen is
- * showing, so apprentices in other stages do not keep brewing.
+ * The level's game ticks once per second only while this screen is
+ * showing, so apprentices in other levels do not keep brewing.
  *
  * @param profile Alchemist playing the stage, passed through navigation.
  * @param stageNumber Stage passed through navigation.
@@ -39,18 +38,19 @@ fun StageRoute(
     val allProgress by trailProgress.progress.collectAsState()
     val profileProgress = allProgress[profile.id] ?: ProfileProgress()
     val levels = profileProgress.levels
-    val stageIndex = CrucibleTrailStages.indexOfFirst { it.number == stageNumber }
-    val stage = CrucibleTrailStages.getOrNull(stageIndex)
-    val status = stageStatuses(CrucibleTrailStages, levels)[stageNumber]
+    val currentStages = trailProgress.currentLevelMap.levels
+    val stageIndex = currentStages.indexOfFirst { it.number == stageNumber }
+    val stage = currentStages.getOrNull(stageIndex)
+    val status = stageStatuses(currentStages, levels)[stageNumber]
 
     if (stage == null || status == null) {
-        StageUnavailable("This stage does not exist.", onBackToTrail, modifier)
+        StageUnavailable("This level does not exist.", onBackToTrail, modifier)
         return
     }
 
     if (status == StageStatus.LOCKED) {
         StageUnavailable(
-            message = "Complete stage ${CrucibleTrailStages[stageIndex - 1].number} to unlock this stage.",
+            message = "Complete level ${currentStages[stageIndex - 1].number} to unlock this level.",
             onBackToTrail = onBackToTrail,
             modifier = modifier,
         )
@@ -64,7 +64,7 @@ fun StageRoute(
         }
     }
 
-    val nextStage = CrucibleTrailStages.getOrNull(stageIndex + 1)
+    val nextStage = currentStages.getOrNull(stageIndex + 1)
     val progress = levels[stageNumber] ?: LevelProgress()
 
     StageScreen(
