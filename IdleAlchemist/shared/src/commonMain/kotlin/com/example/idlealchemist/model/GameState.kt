@@ -27,19 +27,22 @@ data class GameState(
     val ownedAchievements: Set<String> = emptySet(),
     /** Counter value at the moment an achievement was deleted (absent = never deleted). */
     val baselines: Map<String, Int> = emptyMap(),
-    val unlockNotice: UnlockNotice? = null
+    val unlockNotice: UnlockNotice? = null,
+    val extraHandCount: Int = 1,
+    val extraHandCost: Int = 50
 ) {
     /** Points per tap after potion effects. */
-    val clickGain: Int get() = clickPower * clickMultiplier()
+    val clickGain: Int get() = clickPower * clickMultiplier() * extraHandCount
 
     /** Points per second from apprentices after potion effects. */
     val autoGain: Int get() = apprenticeCount * autoMultiplier()
 
+    /** Points received from Clicks after a potion effect. */
     private fun clickMultiplier(): Int = activePotions.fold(1) { total, active ->
         val effect = Potions.byId(active.potionId)?.effect
         if (effect is PotionEffect.ClickMultiplier) total * effect.factor else total
     }
-
+    /** Points received from apprentices after a potion effect. */
     private fun autoMultiplier(): Int = activePotions.fold(1) { total, active ->
         val effect = Potions.byId(active.potionId)?.effect
         if (effect is PotionEffect.AutoMultiplier) total * effect.factor else total

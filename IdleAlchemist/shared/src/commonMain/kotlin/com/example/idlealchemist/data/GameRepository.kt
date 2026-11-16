@@ -3,6 +3,7 @@ package com.example.idlealchemist.data
 import com.example.idlealchemist.model.GameState
 import com.example.idlealchemist.model.afterBuyApprentice
 import com.example.idlealchemist.model.afterBuyExtraClick
+import com.example.idlealchemist.model.afterBuyExtraHand
 import com.example.idlealchemist.model.afterBuyPotion
 import com.example.idlealchemist.model.afterDeleteAchievement
 import com.example.idlealchemist.model.afterTap
@@ -26,7 +27,7 @@ class GameRepository {
     fun buyExtraClick() = _state.update { it.afterBuyExtraClick().withUnlocks() }
     fun buyApprentice() = _state.update { it.afterBuyApprentice().withUnlocks() }
 
-    fun extraHnad() = _state.update { it.afterExtraHand().withUnlocks() }
+    fun buyExtraHand() = _state.update { it.afterBuyExtraHand().withUnlocks() }
     fun buyPotion(id: String) = _state.update { it.afterBuyPotion(id).withUnlocks() }
     fun tick() = _state.update { it.afterTick().withUnlocks() }
     fun deleteAchievement(id: String) = _state.update { it.afterDeleteAchievement(id) }

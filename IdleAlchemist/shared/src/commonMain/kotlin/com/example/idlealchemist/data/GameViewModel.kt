@@ -22,6 +22,8 @@ class GameViewModel : ViewModel() {
     fun tap() = repository.tap()
     fun buyExtraClick() = repository.buyExtraClick()
     fun buyApprentice() = repository.buyApprentice()
+
+    fun buyExtraHand() = repository.buyExtraHand()
     fun buyPotion(id: String) = repository.buyPotion(id)
     fun tick() = repository.tick()
     fun deleteAchievement(id: String) = repository.deleteAchievement(id)

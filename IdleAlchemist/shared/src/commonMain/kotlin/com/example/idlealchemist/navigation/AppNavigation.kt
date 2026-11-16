@@ -59,7 +59,8 @@ fun AppNavigation() {
                         state = state,
                         onTap = game::tap,
                         onBuyExtraClick = game::buyExtraClick,
-                        onBuyApprentice = game::buyApprentice
+                        onBuyApprentice = game::buyApprentice,
+                        onBuyExtraHand = game::buyExtraHand
                     )
                 }
                 entry<Route.Achievements> {

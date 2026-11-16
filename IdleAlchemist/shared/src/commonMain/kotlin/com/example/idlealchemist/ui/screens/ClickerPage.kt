@@ -49,6 +49,7 @@ fun upgrade(
     state: GameState,
     onBuyExtraClick: () -> Unit,
     onBuyApprentice: () -> Unit,
+    onBuyExtraHand: () -> Unit
 ) : List<Upgrade> = listOf(
     Upgrade(
        id = 0,
@@ -72,14 +73,14 @@ fun upgrade(
     ),
     Upgrade(
         id = 2,
-        icon = Res.drawable.icon_apprentice,
-        name = "Apprentice",
-        description = "+ ${state.apprenticeCount} per second",
-        level = state.apprenticeCount,
-        cost = state.autoCost,
-        actionLevel = "Recruit",
-        onClick = onBuyApprentice
-)
+        icon = Res.drawable.icon_stir,
+        name = "Extra Hand",
+        description = "x${state.extraHandCount} per tap",
+        level = state.extraHandCount - 1,
+        cost = state.extraHandCost,
+        actionLevel = "Hire",
+        onClick = onBuyExtraHand
+    )
 )
 
 /**
@@ -95,10 +96,11 @@ fun ClickerPage(
     onTap: () -> Unit,
     onBuyExtraClick: () -> Unit,
     onBuyApprentice: () -> Unit,
+    onBuyExtraHand: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
-    val upgrades = upgrade(state, onBuyExtraClick, onBuyApprentice)
+    val upgrades = upgrade(state, onBuyExtraClick, onBuyApprentice, onBuyExtraHand)
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier
