@@ -261,9 +261,10 @@ fun App() {
 
                         entry<AppRoute.Shop> { route ->
                             val stageNumber = trailProgress.shopStage(route.profile.id)
-                            val stage = CrucibleTrailStages.first { stage ->
+                            val currentMapStages = trailProgress.currentLevelMap.levels
+                            val stage = currentMapStages.firstOrNull { stage ->
                                 stage.number == stageNumber
-                            }
+                            } ?: currentMapStages.first()
                             val stageGame = allProgress[route.profile.id]
                                 ?.levels
                                 ?.get(stageNumber)
