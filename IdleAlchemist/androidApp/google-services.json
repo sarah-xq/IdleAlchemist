@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "260885092625",
+    "project_id": "idlealchemist-75f11",
+    "storage_bucket": "idlealchemist-75f11.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:260885092625:android:6876b067eb9565441b94b0",
+        "android_client_info": {
+          "package_name": "com.example.idlealchemist"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBooigqQlk-Hm654FyCWyR9HhCD5aNFfvE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
