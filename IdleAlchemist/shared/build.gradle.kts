@@ -58,8 +58,8 @@ kotlin {
             implementation("io.ktor:ktor-client-js:3.2.3")
         }
         commonMain.dependencies {
-            implementation("androidx.navigation3:navigation3-runtime:1.1.1")
-            implementation("org.jetbrains.androidx.navigation3:navigation3-ui:1.1.1")
+            implementation("androidx.navigation3:navigation3-runtime:1.2.0")
+            implementation("org.jetbrains.androidx.navigation3:navigation3-ui:1.2.0")
             implementation("io.coil-kt.coil3:coil-compose:3.6.3")
             implementation("io.coil-kt.coil3:coil-network-ktor3:3.6.3")
             implementation("io.ktor:ktor-client-core:3.2.3")

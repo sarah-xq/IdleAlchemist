@@ -11,8 +11,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation3.runtime.NavBackStack
@@ -63,7 +65,9 @@ fun App() {
             val backStack = rememberNavBackStack(
                 AppBackStackConfiguration,
                 AppRoute.Onboarding,
+                AppRoute.Onboarding
             )
+            val deepLinkResolver = remember { RouterDeepLinkResolver() }
 
             val trailProgress = viewModel { TrailProgressViewModel() }
 
@@ -81,6 +85,19 @@ fun App() {
                         profile.id == candidate.id
                     }
                 }
+
+            DisposableEffect(Unit) {
+                ExternalUriHandler.listener = { uri ->
+                    deepLinkResolver.resolve(uri)?.let { safeBackStackList ->
+                        // Clear the old stack and apply the safe new list atomically
+                        backStack.clear()
+                        backStack.addAll(safeBackStackList)
+                    }
+                }
+                onDispose {
+                    ExternalUriHandler.listener = null
+                }
+            }
 
             val trailProfile = previousTrailProfile
                 ?: profiles.lastOrNull()
