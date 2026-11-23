@@ -19,14 +19,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.example.idlealchemist.platform.platformDetails
-import com.example.idlealchemist.platform.rememberKeyValueStore
 
 /**
  * Describes one entry in an informational section.
@@ -35,9 +33,6 @@ import com.example.idlealchemist.platform.rememberKeyValueStore
  * @property description Explanation displayed beneath the heading.
  * @property formula Optional mathematical expression displayed separately.
  */
-/** Storage key for the number of times the Codex page has been opened. */
-private const val CodexVisitsKey = "codex_visits"
-
 private data class CodexEntry(
     val title: String,
     val description: String,
@@ -190,14 +185,6 @@ fun AcademyCodexScreen(
 ) {
     val colors = MaterialTheme.colorScheme
 
-    // Part B (expect/actual): count Codex visits in storage that survives closing the app.
-    val store = rememberKeyValueStore()
-    val visits = remember(store) {
-        val count = (store.getString(CodexVisitsKey)?.toIntOrNull() ?: 0) + 1
-        store.putString(CodexVisitsKey, count.toString())
-        count
-    }
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -243,12 +230,7 @@ fun AcademyCodexScreen(
                             CodexEntry(
                                 title = "Running on",
                                 description = platformDetails(),
-                            ),
-                            CodexEntry(
-                                title = "Codex visits (saved on this device)",
-                                description = visits.toString(),
-                            ),
-                        ),
+                            ),                        ),
                     ),
                 )
             }

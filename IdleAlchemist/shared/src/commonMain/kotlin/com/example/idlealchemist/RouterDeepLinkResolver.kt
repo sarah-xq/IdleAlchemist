@@ -31,7 +31,7 @@ class RouterDeepLinkResolver {
                     return if (targetKey == AppRoute.Onboarding) {
                         listOf(AppRoute.Onboarding)
                     } else {
-                        listOf(AppRoute.AcademyCodex, targetKey)
+                        listOf(AppRoute.Onboarding, targetKey)
                     }
                 }
             }

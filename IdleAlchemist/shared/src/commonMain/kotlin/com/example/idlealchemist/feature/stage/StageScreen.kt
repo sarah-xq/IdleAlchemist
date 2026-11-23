@@ -23,8 +23,6 @@ import com.example.idlealchemist.model.LevelProgress
 import com.example.idlealchemist.model.StageGoal
 import com.example.idlealchemist.model.TrailStage
 import com.example.idlealchemist.model.goalProgress
-import com.example.idlealchemist.platform.rememberHaptics
-import com.example.idlealchemist.platform.rememberShareText
 import com.example.idlealchemist.ui.screens.ClickerPage
 
 /**
@@ -53,9 +51,6 @@ fun StageScreen(
     onBackToTrail: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Part B (expect/actual): a short vibration on every crucible tap.
-    val vibrate = rememberHaptics()
-
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -75,10 +70,7 @@ fun StageScreen(
 
         ClickerPage(
             state = progress.game,
-            onTap = {
-                onTap()
-                vibrate(20L)
-            },
+            onTap = onTap,
             onBuyExtraClick = onBuyExtraClick,
             onBuyApprentice = onBuyApprentice,
             onBuyExtraHand = onBuyExtraHand,
@@ -102,8 +94,6 @@ private fun StageObjectiveCard(
 ) {
     val colors = MaterialTheme.colorScheme
     val reached = progress.goalProgress(stage.goal)
-    // Part B (expect/actual): share the cleared stage.
-    val share = rememberShareText()
 
     Card(
         modifier = modifier,
@@ -161,14 +151,7 @@ private fun StageObjectiveCard(
 
                     OutlinedButton(onClick = onBackToTrail) {
                         Text("Back to trail")
-                    }
-
-                    OutlinedButton(onClick = {
-                        share("I cleared Stage ${stage.number}: ${stage.title} in Idle Alchemist!")
-                    }) {
-                        Text("Share")
-                    }
-                }
+                    }                }
             }
         }
     }
