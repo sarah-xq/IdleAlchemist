@@ -2,33 +2,20 @@ package com.example.idlealchemist.data
 
 import androidx.lifecycle.ViewModel
 import com.example.idlealchemist.model.ContactMessage
-import com.example.idlealchemist.model.LevelMap
 import com.example.idlealchemist.model.ProfileProgress
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Keeps level map progress and sent messages alive across rotation. One instance is shared by the
- * trail/map, stage, achievements, shop and contact screens.
+ * Keeps trail progress and sent messages alive across rotation. One instance is shared by the
+ * trail, stage, achievements, shop and contact screens.
  */
 class TrailProgressViewModel : ViewModel() {
     private val repository = TrailProgressRepository()
 
     /** Saved trail progress keyed by profile ID. */
     val progress: StateFlow<Map<String, ProfileProgress>> = repository.progress
-
-    /** Currently active level map ID. */
-    val currentMapId: StateFlow<Int> = repository.currentMapId
-
-    /** Currently active level map. */
-    val currentLevelMap: LevelMap get() = repository.currentLevelMap
-
-    /** All available level maps. */
-    val availableMaps: List<LevelMap> get() = repository.availableMaps
-
-    /** Selects a level map by its internal ID. */
-    fun selectMap(mapId: Int) = repository.selectMap(mapId)
 
     fun tap(profileId: String, stageNumber: Int) = repository.tap(profileId, stageNumber)
     fun buyExtraClick(profileId: String, stageNumber: Int) = repository.buyExtraClick(profileId, stageNumber)

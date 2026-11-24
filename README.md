@@ -22,13 +22,32 @@ How to install and launch your application:
 
 ## Screenshots of application
 
-- Main Game Screen
+- Create Alchemist Page
 
-![main login screen](Assets/main_page.png)
+![main login screen](Assets/CreateAlchemistPage.png)
 
-- Inventory & Equipment Screen
+- Clicker Page
 
-![clicker Screen](Assets/Clicker_Screen.png)
+![clicker Screen](Assets/Screenshot_20261116_203742.png)
+
+- Trail Page
+
+![clicker Screen](Assets/Screenshot_20261116_203701.png)
+- Achievements Page
+
+![clicker Screen](Assets/Screenshot_20261116_203755.png)
+- In Game Purchase Page
+
+![clicker Screen](Assets/Screenshot_20261116_203800.png)
+- Grimoire Page
+
+![clicker Screen](Assets/Screenshot_20261116_203804.png)
+- Contact Us
+
+![clicker Screen](Assets/Screenshot_20261116_203808.png)
+- Codex Page
+
+![clicker Screen](Assets/Screenshot_20261116_203816.png)
 
 ## Team members
 

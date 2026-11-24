@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.example.idlealchemist.platform.platformDetails
 
 /**
  * Describes one entry in an informational section.
@@ -225,7 +226,11 @@ fun AcademyCodexScreen(
                                 title = "Application version",
                                 description = appVersion,
                             ),
-                        ),
+                            // Part B (expect/actual): device details from each platform.
+                            CodexEntry(
+                                title = "Running on",
+                                description = platformDetails(),
+                            ),                        ),
                     ),
                 )
             }

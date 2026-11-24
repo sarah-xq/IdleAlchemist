@@ -15,11 +15,11 @@ import com.example.idlealchemist.model.stageStatuses
  * Owns the active Level Map and selected level for the Crucible Trail screen.
  *
  * The profile comes directly from the navigation argument. Only the
- * selected stage number is saved; level map definitions remain in the catalog
+ * selected stage number is saved; stage definitions remain in the catalog
  * and stage progress lives in [trailProgress].
  *
  * @param profile Player snapshot passed from the onboarding route.
- * @param trailProgress Session-wide progress for every alchemist and level map.
+ * @param trailProgress Session-wide progress for every alchemist and stage.
  * @param onPlayStage Called with a stage number when an unlocked stage is played.
  * @param onCreateAnother Called when the player returns to registration.
  * @param modifier Layout configuration supplied by the application.
@@ -38,22 +38,16 @@ fun CrucibleTrailRoute(
 
     val allProgress by trailProgress.progress.collectAsState()
     val levels = allProgress[profile.id]?.levels.orEmpty()
-    val currentLevelMap = trailProgress.currentLevelMap
-    val availableMaps = trailProgress.availableMaps
 
-    val selectedStage = currentLevelMap.levels.firstOrNull { stage ->
+    val selectedStage = CrucibleTrailStages.firstOrNull { stage ->
         stage.number == selectedStageNumber
     }
 
     CrucibleTrailScreen(
         profile = profile,
-        levelMap = currentLevelMap,
-        availableMaps = availableMaps,
-        onSelectMap = { mapId ->
-            trailProgress.selectMap(mapId)
-        },
+        stages = CrucibleTrailStages,
         levels = levels,
-        statuses = stageStatuses(currentLevelMap.levels, levels),
+        statuses = stageStatuses(CrucibleTrailStages, levels),
         selectedStage = selectedStage,
         onStageSelected = { stage ->
             selectedStageNumber = stage.number

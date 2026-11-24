@@ -11,8 +11,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation3.runtime.NavBackStack
@@ -62,8 +64,12 @@ fun App() {
 
             val backStack = rememberNavBackStack(
                 AppBackStackConfiguration,
-                AppRoute.Onboarding,
+                AppRoute.Onboarding(),
+                AppRoute.Onboarding()
             )
+            val deepLinkResolver = remember { RouterDeepLinkResolver() }
+
+            val trailProgress = viewModel { TrailProgressViewModel() }
 
             val trailProgress = viewModel { TrailProgressViewModel() }
 
@@ -82,11 +88,24 @@ fun App() {
                     }
                 }
 
+            DisposableEffect(Unit) {
+                ExternalUriHandler.listener = { uri ->
+                    deepLinkResolver.resolve(uri)?.let { safeBackStackList ->
+                        // Clear the old stack and apply the safe new list atomically
+                        backStack.clear()
+                        backStack.addAll(safeBackStackList)
+                    }
+                }
+                onDispose {
+                    ExternalUriHandler.listener = null
+                }
+            }
+
             val trailProfile = previousTrailProfile
                 ?: profiles.lastOrNull()
 
             val title = when (currentRoute) {
-                AppRoute.Onboarding -> "Alchemical Workshop"
+                is AppRoute.Onboarding -> "Alchemical Workshop"
                 is AppRoute.CrucibleTrail -> "Crucible Trail"
                 is AppRoute.Stage -> "Stage ${currentRoute.stageNumber}"
                 is AppRoute.Achievements -> "Achievements"
@@ -131,7 +150,7 @@ fun App() {
                         onCreate = {
                             navigateTo(
                                 backStack = backStack,
-                                destination = AppRoute.Onboarding,
+                                destination = AppRoute.Onboarding(),
                             )
                         },
                         onTrail = {
@@ -190,7 +209,7 @@ fun App() {
                         popDestination(backStack)
                     },
                     entryProvider = entryProvider {
-                        entry<AppRoute.Onboarding> {
+                        entry<AppRoute.Onboarding> { route ->
                             OnboardingRoute(
                                 onProfileCreated = { profile ->
                                     navigateTo(
@@ -199,6 +218,9 @@ fun App() {
                                             AppRoute.CrucibleTrail(profile),
                                     )
                                 },
+                                name = route.name,
+                                location = route.location,
+                                sendResult = route.sendResult,
                             )
                         }
 
@@ -216,7 +238,7 @@ fun App() {
                                 onCreateAnother = {
                                     navigateTo(
                                         backStack = backStack,
-                                        destination = AppRoute.Onboarding,
+                                        destination = AppRoute.Onboarding(),
                                     )
                                 },
                             )
@@ -261,10 +283,9 @@ fun App() {
 
                         entry<AppRoute.Shop> { route ->
                             val stageNumber = trailProgress.shopStage(route.profile.id)
-                            val currentMapStages = trailProgress.currentLevelMap.levels
-                            val stage = currentMapStages.firstOrNull { stage ->
+                            val stage = CrucibleTrailStages.first { stage ->
                                 stage.number == stageNumber
-                            } ?: currentMapStages.first()
+                            }
                             val stageGame = allProgress[route.profile.id]
                                 ?.levels
                                 ?.get(stageNumber)
@@ -322,7 +343,7 @@ fun App() {
                                 onCreateProfile = {
                                     navigateTo(
                                         backStack = backStack,
-                                        destination = AppRoute.Onboarding,
+                                        destination = AppRoute.Onboarding(),
                                     )
                                 },
                                 onProfileRemoved = { profileId ->

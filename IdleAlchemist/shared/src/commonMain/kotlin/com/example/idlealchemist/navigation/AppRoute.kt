@@ -16,7 +16,11 @@ sealed class AppRoute : NavKey {
 
     /** Opens apprentice registration. */
     @Serializable
-    data object Onboarding : AppRoute()
+    data class Onboarding(
+        val name: String = "",
+        val location: String = "",
+        val sendResult: Boolean = false,
+    ) : AppRoute()
 
     /**
      * Opens the trail with a profile passed through navigation.

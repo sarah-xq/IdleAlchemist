@@ -49,7 +49,7 @@ fun SharedBottomNavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Destination(
-            selected = currentRoute == AppRoute.Onboarding,
+            selected = currentRoute is AppRoute.Onboarding,
             glyph = "+",
             label = "Create",
             onClick = onCreate,

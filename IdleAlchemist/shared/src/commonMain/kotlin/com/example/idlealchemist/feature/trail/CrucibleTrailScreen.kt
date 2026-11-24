@@ -66,10 +66,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.idlealchemist.feature.stage.goalProgressLabel
 import com.example.idlealchemist.model.AlchemistProfile
-import com.example.idlealchemist.model.LevelMap
 import com.example.idlealchemist.model.LevelProgress
 import com.example.idlealchemist.model.StageStatus
 import com.example.idlealchemist.model.TrailStage
@@ -97,31 +95,25 @@ private val ColorDustyAsh = Color(0xFF8E929E)
  * Implements the 2D scrolling forest map with connecting illuminated Bezier paths,
  * dark pine tree silhouettes, glowing spores, and interactive level nodes from the HTML spec.
  *
- * Encapsulates the [LevelMap] data structure:
- * - Internal ID ([LevelMap.id]): Cannot be accessed or modified by user. Enables scalability.
- * - Display World Name ([LevelMap.worldName]): Display-only name, unmodifiable by user.
- * - Loaded Level List ([LevelMap.levels]): Fixed order series of levels. Locked levels are inaccessible.
+ * Every stage can be inspected. Unlocked and completed stages can be
+ * played from the challenge dialog; locked stages explain what unlocks them.
  *
- * @param profile Player profile snapshot.
- * @param levelMap Active level map definition.
- * @param availableMaps List of available level maps for map switching.
- * @param onSelectMap Callback when user switches maps.
- * @param levels Saved level progress keyed by stage number.
- * @param statuses Lock status of every level in the map.
- * @param selectedStage Stage currently inspected in the Tome modal, or null.
- * @param onStageSelected Called when a stage node is selected.
- * @param onDismissStage Called when the Tome modal is closed.
+ * @param profile Player snapshot received through navigation.
+ * @param stages Ordered challenge definitions with unique stage numbers.
+ * @param levels Saved progress keyed by stage number.
+ * @param statuses Lock state of every stage, keyed by stage number.
+ * @param selectedStage Challenge currently being inspected, or null.
+ * @param onStageSelected Called when a stage node or card is selected.
+ * @param onDismissStage Called when the challenge dialog is closed.
  * @param onPlayStage Called when an unlocked stage is played.
- * @param onCreateAnother Called to return to profile registration.
- * @param modifier Layout modifier.
+ * @param onCreateAnother Called to return to profile creation.
+ * @param modifier Configuration applied to the screen container.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrucibleTrailScreen(
     profile: AlchemistProfile,
-    levelMap: LevelMap,
-    availableMaps: List<LevelMap> = listOf(levelMap),
-    onSelectMap: (Int) -> Unit = {},
+    stages: List<TrailStage>,
     levels: Map<Int, LevelProgress>,
     statuses: Map<Int, StageStatus>,
     selectedStage: TrailStage?,
@@ -659,9 +651,11 @@ private fun TopFixedHUDHeader(
                         letterSpacing = 1.sp,
                     )
                     Text(
-                        text = "Ascend the Arcane Canopy · 10 Arcane Trials",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = ColorDustyAsh,
+                        text = "${statuses.count { it.value == StageStatus.COMPLETED }} of " +
+                                "${stages.size} stages complete · Finish a stage " +
+                                "to unlock the next",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.secondary,
                     )
                 }
 
@@ -684,23 +678,20 @@ private fun TopFixedHUDHeader(
                 }
             }
 
-            // Action Buttons Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (!isListView) {
-                    OutlinedButton(
-                        onClick = onCurrentNodeClick,
-                        shape = RoundedCornerShape(4.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 3.dp),
-                        border = BorderStroke(1.dp, ColorAetherCyan),
-                        modifier = Modifier.padding(end = 6.dp),
-                    ) {
-                        Text("[ CURRENT NODE ]", fontSize = 10.sp, color = ColorAetherCyan, fontWeight = FontWeight.Bold)
-                    }
-                }
+            itemsIndexed(
+                items = stages,
+                key = { _, stage -> stage.number },
+            ) { index, stage ->
+                StagePathItem(
+                    stage = stage,
+                    status = statuses[stage.number] ?: StageStatus.LOCKED,
+                    isLast = index == stages.lastIndex,
+                    isSelected = selectedStage?.number == stage.number,
+                    onClick = {
+                        onStageSelected(stage)
+                    },
+                )
+            }
 
                 OutlinedButton(
                     onClick = onToggleView,
@@ -712,33 +703,34 @@ private fun TopFixedHUDHeader(
                 }
             }
 
-            // World Map Selector if multiple maps exist
-            if (availableMaps.size > 1) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("MAP:", fontSize = 10.sp, color = ColorDustyAsh, fontWeight = FontWeight.Bold)
-                    availableMaps.forEach { map ->
-                        FilterChip(
-                            selected = map.id == currentMapId,
-                            onClick = { onSelectMap(map.id) },
-                            label = {
-                                Text(
-                                    text = if (map.id == 999) "Debug" else "Pinewoods",
-                                    fontSize = 10.sp,
-                                )
-                            },
-                        )
-                    }
-                }
-            }
-        }
+    if (selectedStage != null) {
+        val stageIndex = stages.indexOf(selectedStage)
+
+        StageDetailsDialog(
+            stage = selectedStage,
+            status = statuses[selectedStage.number] ?: StageStatus.LOCKED,
+            progress = levels[selectedStage.number] ?: LevelProgress(),
+            previousStage = stages.getOrNull(stageIndex - 1),
+            onPlay = {
+                onPlayStage(selectedStage)
+            },
+            onDismiss = onDismissStage,
+        )
     }
 }
 
 /**
- * Item layout for Compact List View Mode.
+ * Displays one numbered node, its connecting line, and its challenge card.
+ *
+ * Intrinsic row height lets the connector follow the card's text height.
+ * Text may wrap without requiring a fixed card height.
+ *
+ * @param stage Challenge definition to display.
+ * @param status Whether the stage is locked, playable, or complete.
+ * @param isLast Whether the connector should end at this node.
+ * @param isSelected Whether this stage is currently being inspected.
+ * @param onClick Called when the node or card is selected.
+ * @param modifier Configuration applied to the complete path item.
  */
 @Composable
 private fun LevelMapNodeItem(
@@ -773,24 +765,27 @@ private fun LevelMapNodeItem(
                     .size(52.dp)
                     .border(2.dp, nodeBorder, CircleShape)
                     .semantics {
-                        contentDescription = "Level ${stage.roman}: ${stage.title}, ${statusLabel(status)}"
+                        contentDescription =
+                            "Inspect stage ${stage.number}: ${stage.title}, " +
+                                    statusLabel(status)
                     },
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = nodeBg,
-                    contentColor = nodeContentColor,
-                ),
+                colors = when (status) {
+                    StageStatus.COMPLETED -> ButtonDefaults.filledTonalButtonColors(
+                        containerColor = colors.primary,
+                        contentColor = colors.onPrimary,
+                    )
+                    StageStatus.UNLOCKED -> ButtonDefaults.filledTonalButtonColors()
+                    StageStatus.LOCKED -> ButtonDefaults.filledTonalButtonColors(
+                        containerColor = colors.surfaceVariant,
+                        contentColor = colors.onSurfaceVariant,
+                    )
+                },
             ) {
                 Text(
-                    text = when {
-                        status == StageStatus.COMPLETED -> "✓"
-                        status == StageStatus.LOCKED -> "🔒"
-                        stage.isBoss -> "👑"
-                        else -> stage.roman
-                    },
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    text = if (status == StageStatus.COMPLETED) "✓" else stage.number.toString(),
+                    style = MaterialTheme.typography.titleLarge,
                 )
             }
 
@@ -871,46 +866,41 @@ private fun LevelMapNodeItem(
                     color = ColorDustyAsh,
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = statusLabel(status),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = when (status) {
-                            StageStatus.COMPLETED -> ColorTransmutationGold
-                            StageStatus.UNLOCKED -> ColorAetherCyan
-                            StageStatus.LOCKED -> ColorDustyAsh
-                        },
-                    )
-
-                    if (status == StageStatus.COMPLETED) {
-                        Text(
-                            text = "★★★",
-                            color = ColorTransmutationGold,
-                            fontSize = 14.sp,
-                        )
-                    }
-                }
+                Text(
+                    text = statusLabel(status),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (status == StageStatus.LOCKED) {
+                        colors.onSurfaceVariant
+                    } else {
+                        colors.primary
+                    },
+                )
             }
         }
     }
 }
 
 /**
- * Status text label for level node item.
+ * Short description of a stage's lock state, shown on its card.
+ *
+ * @param status Lock state of the stage.
  */
 private fun statusLabel(status: StageStatus): String = when (status) {
-    StageStatus.COMPLETED -> "Completed · Tap to replay"
-    StageStatus.UNLOCKED -> "Unlocked · Tap to play"
-    StageStatus.LOCKED -> "Locked · Finish prior trials"
+    StageStatus.COMPLETED -> "Completed · tap to replay"
+    StageStatus.UNLOCKED -> "Unlocked · tap to play"
+    StageStatus.LOCKED -> "Locked"
 }
 
 /**
- * Tome Detail Modal for inspecting and playing a level node.
+ * Displays the full objective and associated reward for a selected stage,
+ * with a button to play it when it is unlocked.
+ *
+ * @param stage Challenge selected from the visual trail.
+ * @param status Whether the stage is locked, playable, or complete.
+ * @param progress Saved progress for the stage.
+ * @param previousStage Stage that must be completed to unlock this one.
+ * @param onPlay Called when Play or Resume is selected.
+ * @param onDismiss Called when the dialog is dismissed or Close is selected.
  */
 @Composable
 private fun TomeLevelDetailsModal(
@@ -1046,51 +1036,47 @@ private fun TomeLevelDetailsModal(
                     )
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "PROGRESS STATUS",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = ColorDustyAsh,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = when {
-                            status == StageStatus.LOCKED && previousStage != null ->
-                                "Locked. Complete Trial ${previousStage.roman}: ${previousStage.title} to unlock."
-                            started ->
-                                goalProgressLabel(stage.goal, progress.goalProgress(stage.goal)) +
-                                        " · ${progress.game.points} essence saved"
-                            else -> "Not started. Essence begins at 0 in this trial."
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (status == StageStatus.LOCKED) ColorDragonEmber else ColorAetherCyan,
-                    )
-                }
+                Text(
+                    text = stage.reward,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+                Text(
+                    text = "Progress",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+
+                Text(
+                    text = when {
+                        status == StageStatus.LOCKED && previousStage != null ->
+                            "Complete stage ${previousStage.number}: " +
+                                    "${previousStage.title} to unlock this stage."
+                        started ->
+                            goalProgressLabel(stage.goal, progress.goalProgress(stage.goal)) +
+                                    " · ${progress.game.points} essence saved"
+                        else -> "Not started. Essence starts at 0 in every stage."
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                )
             }
         },
         confirmButton = {
             if (status != StageStatus.LOCKED) {
-                TextButton(
-                    onClick = onPlay,
-                    colors = ButtonDefaults.textButtonColors(contentColor = ColorTransmutationGold),
-                ) {
+                TextButton(onClick = onPlay) {
                     Text(
-                        text = when {
-                            status == StageStatus.COMPLETED -> "[ REPLAY TRIAL ]"
-                            started -> "[ RESUME TRIAL ]"
-                            else -> "[ COMPLETE LEVEL ]"
+                        when {
+                            status == StageStatus.COMPLETED -> "Replay"
+                            started -> "Resume"
+                            else -> "Play"
                         },
-                        fontWeight = FontWeight.Bold,
                     )
                 }
             }
         },
         dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(contentColor = ColorDustyAsh),
-            ) {
-                Text("[ CLOSE ]")
+            TextButton(onClick = onDismiss) {
+                Text("Close")
             }
         },
     )

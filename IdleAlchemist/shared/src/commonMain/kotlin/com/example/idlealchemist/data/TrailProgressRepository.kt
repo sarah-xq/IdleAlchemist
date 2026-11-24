@@ -1,8 +1,6 @@
 package com.example.idlealchemist.data
 
-import com.example.idlealchemist.feature.trail.AvailableLevelMaps
 import com.example.idlealchemist.feature.trail.CrucibleTrailStages
-import com.example.idlealchemist.model.LevelMap
 import com.example.idlealchemist.model.LevelProgress
 import com.example.idlealchemist.model.ProfileProgress
 import com.example.idlealchemist.model.StageStatus
@@ -10,7 +8,6 @@ import com.example.idlealchemist.model.TrailStage
 import com.example.idlealchemist.model.achievementsGame
 import com.example.idlealchemist.model.afterBuyApprentice
 import com.example.idlealchemist.model.afterBuyExtraClick
-import com.example.idlealchemist.model.afterBuyExtraHand
 import com.example.idlealchemist.model.afterBuyPotion
 import com.example.idlealchemist.model.afterDeleteAchievement
 import com.example.idlealchemist.model.afterTap
@@ -23,59 +20,29 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import com.example.idlealchemist.model.afterBuyExtraHand
 
 /**
- * Keeps every alchemist's progress through level maps for the session.
+ * Keeps every alchemist's progress through the trail for the session.
  *
  * Progress is stored per profile and per stage, so each stage is a
  * separate clicker game that resumes where the player left it.
  * Achievements are earned per profile from every stage combined. Actions
  * on a locked or unknown stage are ignored.
  *
- * @property availableMaps All loaded level maps available in the application.
+ * @param stages Stages in trail order.
  * @param nowMillis Clock used for combo windows; replaceable in tests.
  */
 class TrailProgressRepository(
-    val availableMaps: List<LevelMap> = AvailableLevelMaps,
-    initialMapId: Int = 1,
+    private val stages: List<TrailStage> = CrucibleTrailStages,
     private val nowMillis: () -> Long = monotonicMillis(),
 ) {
-    /** Secondary constructor allowing stage list initialization for tests. */
-    constructor(
-        stages: List<TrailStage>,
-        nowMillis: () -> Long = monotonicMillis(),
-    ) : this(
-        availableMaps = listOf(LevelMap(id = 1, worldName = "The Alchemist's Tome: Pinewoods", levels = stages)),
-        initialMapId = 1,
-        nowMillis = nowMillis,
-    )
-
     private val mutableProgress =
         MutableStateFlow<Map<String, ProfileProgress>>(emptyMap())
 
     /** Saved trail progress keyed by profile ID. */
     val progress: StateFlow<Map<String, ProfileProgress>> =
         mutableProgress.asStateFlow()
-
-    private val _currentMapId = MutableStateFlow(initialMapId)
-
-    /** Currently active internal level map ID. */
-    val currentMapId: StateFlow<Int> = _currentMapId.asStateFlow()
-
-    /** Currently active level map. */
-    val currentLevelMap: LevelMap
-        get() = availableMaps.firstOrNull { it.id == _currentMapId.value } ?: availableMaps.first()
-
-    /** Stages of the currently active level map. */
-    val stages: List<TrailStage>
-        get() = currentLevelMap.levels
-
-    /** Switches the active level map by its internal level map ID. */
-    fun selectMap(mapId: Int) {
-        if (availableMaps.any { it.id == mapId }) {
-            _currentMapId.value = mapId
-        }
-    }
 
     /**
      * Applies a tap to the stage's game and checks its goal.
