@@ -71,6 +71,8 @@ fun App() {
 
             val trailProgress = viewModel { TrailProgressViewModel() }
 
+            val trailProgress = viewModel { TrailProgressViewModel() }
+
             val currentRoute = backStack.lastOrNull() as? AppRoute
 
             val allProgress by trailProgress.progress.collectAsState()

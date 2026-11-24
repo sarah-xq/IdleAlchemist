@@ -151,7 +151,8 @@ private fun StageObjectiveCard(
 
                     OutlinedButton(onClick = onBackToTrail) {
                         Text("Back to trail")
-                    }                }
+                    }
+                }
             }
         }
     }

@@ -1,7 +1,7 @@
 package com.example.idlealchemist.model
 
 /**
- * Describes one stage displayed on the Crucible Trail.
+ * Describes one stage/level displayed on a Level Map.
  *
  * Each stage is played as its own clicker game. Completing its [goal]
  * unlocks the next stage; see [LevelProgress] for what is saved per stage.

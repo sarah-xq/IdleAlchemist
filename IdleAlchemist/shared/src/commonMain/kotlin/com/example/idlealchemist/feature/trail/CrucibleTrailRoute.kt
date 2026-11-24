@@ -12,7 +12,7 @@ import com.example.idlealchemist.model.AlchemistProfile
 import com.example.idlealchemist.model.stageStatuses
 
 /**
- * Owns the selected challenge for the Crucible Trail screen.
+ * Owns the active Level Map and selected level for the Crucible Trail screen.
  *
  * The profile comes directly from the navigation argument. Only the
  * selected stage number is saved; stage definitions remain in the catalog
