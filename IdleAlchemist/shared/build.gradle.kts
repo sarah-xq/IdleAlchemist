@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -11,19 +10,6 @@ plugins {
 
 kotlin {
     jvm()
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser {
-            // Web tests run in a real (headless) Chrome via Karma: ./gradlew :shared:wasmJsBrowserTest
-            testTask {
-                useKarma {
-                    useChromeHeadless()
-                }
-            }
-        }
-        // Required by Compose so the browser tests bundle the Skiko (graphics) runtime.
-        binaries.executable()
-    }
     android {
        namespace = "com.example.idlealchemist.shared"
        compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -45,24 +31,16 @@ kotlin {
     }
     sourceSets {
         androidMain.dependencies {
+            implementation(libs.androidx.activity.compose)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
-            // OkHttp is JVM-only, so Android and desktop get it here instead of commonMain.
-            implementation("io.ktor:ktor-client-okhttp:3.2.3")
-        }
-        jvmMain.dependencies {
-            implementation("io.ktor:ktor-client-okhttp:3.2.3")
-        }
-        wasmJsMain.dependencies {
-            // Browser HTTP engine for ktor (used by Coil to load remote images on web).
-            implementation("io.ktor:ktor-client-js:3.2.3")
         }
         commonMain.dependencies {
             implementation("androidx.navigation3:navigation3-runtime:1.2.0")
             implementation("org.jetbrains.androidx.navigation3:navigation3-ui:1.2.0")
             implementation("io.coil-kt.coil3:coil-compose:3.6.3")
-            implementation("io.coil-kt.coil3:coil-network-ktor3:3.6.3")
-            implementation("io.ktor:ktor-client-core:3.2.3")
+            implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
+            implementation("io.ktor:ktor-client-okhttp:3.2.3")
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

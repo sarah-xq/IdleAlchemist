@@ -11,11 +11,11 @@ import kotlinx.serialization.serializer
 class RouterDeepLinkResolver {
     // Map urls to your existing keys
     private val aboutMatcher: DeepLinkMatcher<*, *> = UriDeepLinkMatcher(
-        uriPattern = DeepLinkUri("example://compose.deeplink/about"),
+        uriPattern = DeepLinkUri("idlealchemist://compose.deeplink/about/"),
         serializer = serializer<AppRoute.AcademyCodex>()
     )
     private val boardingMatcher: DeepLinkMatcher<*, *> = UriDeepLinkMatcher(
-        uriPattern = DeepLinkUri("example://compose.deeplink/start"),
+        uriPattern = DeepLinkUri("idlealchemist://compose.deeplink/onboarding"),
         serializer = serializer<AppRoute.Onboarding>()
     )
     private val matchers = listOf(aboutMatcher, boardingMatcher)
@@ -28,10 +28,11 @@ class RouterDeepLinkResolver {
                 val targetKey = matchResult?.key as? NavKey
                 // Build the synthetic backstack directly in Kotlin without unsafe casts
                 if (targetKey != null) {
-                    return if (targetKey == AppRoute.Onboarding) {
-                        listOf(AppRoute.Onboarding)
+                    return if (targetKey is AppRoute.Onboarding) {
+                        val sendResult = request.uri?.getQueryParameters("sendResult")?.firstOrNull() == "true"
+                        listOf(targetKey.copy(sendResult = sendResult))
                     } else {
-                        listOf(AppRoute.AcademyCodex, targetKey)
+                        listOf(AppRoute.Onboarding(), targetKey)
                     }
                 }
             }

@@ -64,8 +64,8 @@ fun App() {
 
             val backStack = rememberNavBackStack(
                 AppBackStackConfiguration,
-                AppRoute.Onboarding,
-                AppRoute.Onboarding
+                AppRoute.Onboarding(),
+                AppRoute.Onboarding()
             )
             val deepLinkResolver = remember { RouterDeepLinkResolver() }
 
@@ -103,7 +103,7 @@ fun App() {
                 ?: profiles.lastOrNull()
 
             val title = when (currentRoute) {
-                AppRoute.Onboarding -> "Alchemical Workshop"
+                is AppRoute.Onboarding -> "Alchemical Workshop"
                 is AppRoute.CrucibleTrail -> "Crucible Trail"
                 is AppRoute.Stage -> "Stage ${currentRoute.stageNumber}"
                 is AppRoute.Achievements -> "Achievements"
@@ -148,7 +148,7 @@ fun App() {
                         onCreate = {
                             navigateTo(
                                 backStack = backStack,
-                                destination = AppRoute.Onboarding,
+                                destination = AppRoute.Onboarding(),
                             )
                         },
                         onTrail = {
@@ -207,7 +207,7 @@ fun App() {
                         popDestination(backStack)
                     },
                     entryProvider = entryProvider {
-                        entry<AppRoute.Onboarding> {
+                        entry<AppRoute.Onboarding> { route ->
                             OnboardingRoute(
                                 onProfileCreated = { profile ->
                                     navigateTo(
@@ -216,6 +216,9 @@ fun App() {
                                             AppRoute.CrucibleTrail(profile),
                                     )
                                 },
+                                name = route.name,
+                                location = route.location,
+                                sendResult = route.sendResult,
                             )
                         }
 
@@ -233,7 +236,7 @@ fun App() {
                                 onCreateAnother = {
                                     navigateTo(
                                         backStack = backStack,
-                                        destination = AppRoute.Onboarding,
+                                        destination = AppRoute.Onboarding(),
                                     )
                                 },
                             )
@@ -338,7 +341,7 @@ fun App() {
                                 onCreateProfile = {
                                     navigateTo(
                                         backStack = backStack,
-                                        destination = AppRoute.Onboarding,
+                                        destination = AppRoute.Onboarding(),
                                     )
                                 },
                                 onProfileRemoved = { profileId ->

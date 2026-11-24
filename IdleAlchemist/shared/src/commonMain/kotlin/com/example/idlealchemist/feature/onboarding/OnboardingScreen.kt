@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -31,6 +33,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import com.example.idlealchemist.rememberResultResponder
 import androidx.compose.ui.unit.dp
 import com.example.idlealchemist.model.ProfileDraft
 import com.example.idlealchemist.model.ProfileValidation
@@ -56,7 +59,9 @@ fun OnboardingScreen(
     onDraftChange: (ProfileDraft) -> Unit,
     onSubmit: () -> Unit,
     modifier: Modifier = Modifier,
+    sendResult: Boolean,
 ) {
+    val sendResultAndClose = rememberResultResponder()
     val colors = MaterialTheme.colorScheme
     val canSubmit = validation.isValid && !isSubmitting
 
@@ -99,6 +104,7 @@ fun OnboardingScreen(
                     ),
                     style = MaterialTheme.typography.labelSmall,
                 )
+
             }
 
             Column(
@@ -117,6 +123,14 @@ fun OnboardingScreen(
                     style = MaterialTheme.typography.bodyLarge,
                     color = colors.onSurfaceVariant,
                 )
+                if (sendResult) {
+                    Button(onClick = {
+                        sendResultAndClose("Welcome wizard!")
+                    }) {
+                        Text("Confirm & Return Result")
+                    }
+                }
+
             }
 
             Card(

@@ -40,6 +40,9 @@ private val ProfileDraftSaver = Saver<ProfileDraft, String>(
 fun OnboardingRoute(
     onProfileCreated: (AlchemistProfile) -> Unit,
     modifier: Modifier = Modifier,
+    name: String = "",
+    location: String = "",
+    sendResult: Boolean = false,
 ) {
     val repository = LocalProfileRepository.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -85,5 +88,6 @@ fun OnboardingRoute(
             }
         },
         modifier = modifier,
+        sendResult = sendResult,
     )
 }
